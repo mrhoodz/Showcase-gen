@@ -1,4 +1,4 @@
-package fetchsitedata
+package fetchsitetitle
 
 import (
 	"fmt"

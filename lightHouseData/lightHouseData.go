@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	fetchsitedata "example.com/first/fetchSiteData"
+	fetchsitetitle "example.com/first/fetchSiteTitle"
 	// lighthousedata "example.com/first/lightHouseData"
 )
 
@@ -133,7 +133,7 @@ func CollectPageSpeedData(page Page) (PageSpeedData, error) {
 
 	// Extracting the data
 	// Fetch the site title
-	siteTitle, err := fetchsitedata.FetchSiteTitle(page.Href)
+	siteTitle, err := fetchsitetitle.FetchSiteTitle(page.Href)
 	if err != nil {
 		fmt.Println(err)
 	}
