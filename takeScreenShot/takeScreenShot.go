@@ -1,10 +1,13 @@
 package takescreenshot
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"regexp"
 	"sync"
@@ -39,38 +42,25 @@ func TakeScreenShot(ctx context.Context, siteURL string) error {
 
 	// Take a screenshot of the entire page
 	var buf []byte
-	// if err := chromedp.Run(ctx, chromedp.CaptureScreenshot(&buf)); err != nil {
-	// 	return fmt.Errorf("failed to take screenshot: %v", err)
-	// }
-
-	// var buf []byte
-	if err := chromedp.Run(ctx, chromedp.FullScreenshot(&buf, 50)); err != nil {
-		return fmt.Errorf("failed to take fullshot: %v", err)
+	if err := chromedp.Run(ctx, chromedp.CaptureScreenshot(&buf)); err != nil {
+		return fmt.Errorf("failed to take screenshot: %v", err)
 	}
-
-	// hh := chromedp.FullScreenshot(&buf, 50)
-	// println(hh.Do())
 
 	// Sanitize the title to remove invalid characters
 	sanitizedTitle := sanitizeFileName(siteURL)
 
-	// Save the screenshot to a file
-	file, err := os.Create("public/showcase/" + sanitizedTitle + ".webp")
-	if err != nil {
-		return fmt.Errorf("failed to create file: %v", err)
-	}
-	defer file.Close()
+	postImage(sanitizedTitle, buf)
 
 	// if _, err := file.Write(buf); err != nil {
 	// 	return fmt.Errorf("failed to write to file: %v", err)
 	// }
 
 	// Screenshot captured successfully
-	fmt.Println("Screenshot saved to public/showcase/" + sanitizedTitle + ".png")
+	// fmt.Println("Screenshot saved to public/showcase/" + sanitizedTitle + ".png")
 
 	endTime := time.Now()
 	elapsedTime := endTime.Sub(startTime)
-	fmt.Printf("Execution time for takeScreenShot for %s: %s\n", siteURL, elapsedTime)
+	fmt.Printf("Execution time for taking ScreenShot and posting image for %s is %s\n", siteURL, elapsedTime)
 
 	return nil
 }
@@ -105,7 +95,7 @@ func CaptureBatch(pagesJSONData []byte) {
 	}
 
 	// Limit the number of concurrent goroutines
-	concurrencyLimit := 7
+	concurrencyLimit := 2
 	sem := make(chan struct{}, concurrencyLimit)
 
 	// Create a context for the entire batch
@@ -145,4 +135,48 @@ func CaptureBatch(pagesJSONData []byte) {
 	endTime := time.Now()
 	elapsedTime := endTime.Sub(startTime)
 	fmt.Printf("Total execution time for takescreenShot.go [CaptureBatch()] : %s\n", elapsedTime)
+}
+
+func postImage(title string, imageBuffer []byte) {
+	// URL of the endpoint to which you want to post data
+	url := "https://sharp-next.vercel.app/api/makeWebp"
+
+	// // Read the contents of the input image file
+	// imageData, err := ioutil.ReadFile("input.png")
+	// if err != nil {
+	// 	fmt.Println("Error reading input image file:", err)
+	// 	return
+	// }
+
+	// Create a request body with the data
+	requestBody := bytes.NewBuffer(imageBuffer)
+
+	// Make an HTTP POST request with the request body
+	fmt.Println("posting image for processing")
+	resp, err := http.Post(url, "image/png", requestBody)
+	if err != nil {
+		fmt.Println("Error making POST request:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	responseBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return
+	}
+
+	// Print the response body
+	// fmt.Println("Response: xxx ", string(responseBody))
+
+	// Write the byte slice to a file named "test.webp"
+	err = os.WriteFile("public/showcase/"+title+".webp", responseBody, 0644)
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+
+	fmt.Println("File saved successfully as test.webp")
+
 }

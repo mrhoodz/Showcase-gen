@@ -67,14 +67,6 @@ func GetlightHouseData(url string) (*PageSpeedOutput, error) {
 		return nil, fmt.Errorf("HTTP request failed with status code: %d", resp.StatusCode)
 	}
 
-	// // Decode JSON response
-	// var data map[string]interface{}
-	// if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-	// 	return nil, err
-	// }
-
-	// return data, nil
-
 	// Decode JSON response
 	var output PageSpeedOutput
 	if err := json.NewDecoder(resp.Body).Decode(&output); err != nil {
@@ -99,21 +91,6 @@ func LightHouseData(url string) (*PageSpeedOutput, error) {
 	return result, nil
 
 }
-
-/////
-
-// package main
-
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"io/ioutil"
-// 	"log"
-// 	"sync"
-// 	"time"
-
-// 	lighthousedata "example.com/first/lightHouseData"
-// )
 
 type Page struct {
 	Href string `json:"href"`
@@ -179,83 +156,6 @@ func CollectPageSpeedData(page Page) (PageSpeedData, error) {
 	return pageSpeedData, nil
 }
 
-func RunWriteGenerate() {
-	startTime := time.Now()
-
-	// Read the contents of pages.json
-	data, err := ioutil.ReadFile("public/pages.json")
-	if err != nil {
-		log.Fatalf("Error reading pages.json: %v", err)
-	}
-
-	// Parse the JSON data into a slice of Page structs
-	var pages []Page
-	if err := json.Unmarshal(data, &pages); err != nil {
-		log.Fatalf("Error parsing JSON: %v", err)
-	}
-
-	// Create a channel to send and receive PageSpeed data
-	pageSpeedDataChan := make(chan PageSpeedData, len(pages))
-
-	// Create a WaitGroup to wait for all Goroutines to finish
-	var wg sync.WaitGroup
-
-	// Define rate limiting parameters
-	rateLimit := 20                                           // API rate limit per second
-	requestInterval := time.Second / time.Duration(rateLimit) // Interval between requests
-	semaphore := make(chan struct{}, rateLimit)
-
-	// Process pages with rate limiting
-	for _, page := range pages {
-		semaphore <- struct{}{} // Acquire a token from the semaphore
-		wg.Add(1)
-		go func(page Page) {
-			defer wg.Done()
-			defer func() { <-semaphore }() // Release the token back to the semaphore
-			pageSpeedData, err := CollectPageSpeedData(page)
-			if err != nil {
-				log.Printf("Error processing page %s: %v", page.Href, err)
-				return
-			}
-			pageSpeedDataChan <- pageSpeedData
-		}(page)
-		time.Sleep(requestInterval) // Wait before processing the next page
-	}
-
-	// Close the channel when all Goroutines finish
-	go func() {
-		wg.Wait()
-		close(pageSpeedDataChan)
-	}()
-
-	// Collect processed page speed data from the channel
-	var allPageSpeedData []PageSpeedData
-	for data := range pageSpeedDataChan {
-		allPageSpeedData = append(allPageSpeedData, data)
-	}
-
-	// Marshal the page speed data slice into JSON format
-	jsonData, err := json.MarshalIndent(allPageSpeedData, "", "  ")
-	if err != nil {
-		log.Fatalf("Error marshaling JSON: %v", err)
-	}
-
-	// Write the JSON data to generate.json
-	if err := ioutil.WriteFile("public/generate3.json", jsonData, 0644); err != nil {
-		log.Fatalf("Error writing generate.json: %v", err)
-	}
-
-	endTime := time.Now()
-	elapsedTime := endTime.Sub(startTime)
-	fmt.Printf("Total execution time: %s\n", elapsedTime)
-}
-
-// type pageData struct {
-// 	Href string `json:"href"`
-// 	Size string `json:"size,omitempty"`
-// 	Tags string `json:"tags"`
-// }
-
 func RunWriteGenerate_X(pagesJSONData []byte) {
 	startTime := time.Now()
 
@@ -279,7 +179,7 @@ func RunWriteGenerate_X(pagesJSONData []byte) {
 	var wg sync.WaitGroup
 
 	// Define rate limiting parameters
-	rateLimit := 15                                           // API rate limit per second
+	rateLimit := 20                                           // API rate limit per second
 	requestInterval := time.Second / time.Duration(rateLimit) // Interval between requests
 	semaphore := make(chan struct{}, rateLimit)
 

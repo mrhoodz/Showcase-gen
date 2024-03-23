@@ -3,6 +3,7 @@ module example.com/first
 go 1.22.1
 
 require (
+	github.com/chai2010/webp v1.1.1 // indirect
 	github.com/chromedp/cdproto v0.0.0-20240312231614-1e5096e63154 // indirect
 	github.com/chromedp/chromedp v0.9.5 // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect

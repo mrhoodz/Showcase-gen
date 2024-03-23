@@ -11,6 +11,7 @@ import (
 	"time"
 
 	lighthousedata "example.com/first/lightHouseData"
+
 	takescreenshot "example.com/first/takeScreenShot"
 )
 
